@@ -37,7 +37,7 @@ type Author struct {
 var books []Book
 
 
-//get all books and their authors
+//get all books with authors name
 func allBooks(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "Application/json")
@@ -47,52 +47,56 @@ func allBooks(w http.ResponseWriter, r *http.Request) {
 
 //get a book by ID
 func singleBookByID(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
+
+	w.Header().Set("Content-Type", "application/json") //for formatting purpose
 	vars := mux.Vars(r)
 
-	var err bool
-	err = true
+	var error bool
+	error = true
 
+	//loop through books array and search for the requested book
 	for _, book := range books {
 		if book.ID == vars["id"] {
-			err = false
+			error = false
 			json.NewEncoder(w).Encode(book)
 			return
 		}
 	}
-	if err == true {
+	//if there is an error the show http status
+	if error == true {
 		w.WriteHeader(http.StatusNotFound)
 		w.Write([]byte("404 Resource not found"))
 		return
 	}
 
 	json.NewEncoder(w).Encode(&Book{})
-	w.WriteHeader(http.StatusOK)
+	w.WriteHeader(http.StatusOK) //no error then send http ok status
 }
 
 func addBook(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
 	var book Book
-	_ = json.NewDecoder(r.Body).Decode(&book)
+	_ = json.NewDecoder(r.Body).Decode(&book) //decode into json format
 
 	idCounter++
 
-	book.ID = strconv.Itoa(idCounter)
+	book.ID = strconv.Itoa(idCounter) //covert unique idCounter to string
 	books = append(books, book)
 
 	json.NewEncoder(w).Encode(book)
 	w.WriteHeader(http.StatusOK)
 }
 
-func loadRequest(w http.ResponseWriter, r *http.Request)  {
-
+func loanRequest(w http.ResponseWriter, r *http.Request)  {
+	//do loan request and allow book loan
 }
 
 func authorization(w http.ResponseWriter, r *http.Request)  {
-
+	//restrict user actions according to their access limit
 }
 
+//update book using book ID
 func updateBook(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
@@ -106,11 +110,14 @@ func updateBook(w http.ResponseWriter, r *http.Request) {
 	//tempBook.ID = strconv.Itoa(tempBook.ID)
 
 	for index, item := range books {
-		if item.ID == vars["id"] {
+		if item.ID == vars["id"] { //book id finding
 
+			//book ID found so, no error generated
 			error = false
 
 			_ = json.NewDecoder(r.Body).Decode(&tempBook)
+
+			//updating with current book data
 			books[index] = tempBook
 			books[index].ID = item.ID
 
@@ -120,6 +127,7 @@ func updateBook(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if error == true{
+		//error generated, show error status and custom response
 		w.WriteHeader(http.StatusBadRequest)
 		w.Write([]byte("400 Bad Update Request"))
 		return
@@ -141,9 +149,8 @@ func deleteBook(w http.ResponseWriter, r *http.Request) {
 		if item.ID == vars["id"] {
 
 			error = false
-			//tempBook.ID = books[index].ID
 			tempBook = books[index]
-			books = append(books[:index], books[index+1:]...)
+			books = append(books[:index], books[index+1:]...) //append left slice of index and right slice of index into one
 			_ = json.NewEncoder(w).Encode(tempBook)
 			return
 		}
@@ -155,27 +162,32 @@ func deleteBook(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	//decrease a idCounter after deleting one
 	idCounter--
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(&Book{})
 }
 
 func homePage(w http.ResponseWriter, r *http.Request)  {
+	//welcoming to homepage
 	fmt.Fprint(w, "Welcome to homepage")
-	log.Println(w, "Homepage endpoint hit")
+	//log.Println(w, "Homepage endpoint hit")
 }
 
 
 func main() {
+	//declaring mux router
 	myRouter := mux.NewRouter().StrictSlash(true)
 
-	// Manually set data
+	// Manually setting data
 	books = append(books, Book{ID: "1", ISBN: "438227", Title: "Book First", Author: &Author{Firstname: "John", Lastname: "Doe"}})
 	books = append(books, Book{ID: "2", ISBN: "454555", Title: "Book Second", Author: &Author{Firstname: "Steve", Lastname: "Smith"}})
 	books = append(books, Book{ID: "3", ISBN: "4545568", Title: "Book Third", Author: &Author{Firstname: "Malik", Lastname: "Khan"}})
 
+	//initial idCounter setup
 	idCounter = 3
 
+	//hadling all routes
 	myRouter.HandleFunc("/library", homePage)
 	myRouter.HandleFunc("/library/books", allBooks).Methods("GET")
 	myRouter.HandleFunc("/library/book/{id}", singleBookByID).Methods("GET")
@@ -183,5 +195,6 @@ func main() {
 	myRouter.HandleFunc("/library/books/{id}", updateBook).Methods("PUT")
 	myRouter.HandleFunc("/library/books/{id}", deleteBook).Methods("DELETE")
 
+	//hosting at 8081, used for http request
 	log.Fatal(http.ListenAndServe(":8081", myRouter))
 }
