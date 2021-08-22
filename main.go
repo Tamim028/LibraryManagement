@@ -171,6 +171,7 @@ func deleteBook(w http.ResponseWriter, r *http.Request) {
 func homePage(w http.ResponseWriter, r *http.Request)  {
 	//welcoming to homepage
 	fmt.Fprint(w, "Welcome to homepage")
+	w.WriteHeader(http.StatusOK)
 	//log.Println(w, "Homepage endpoint hit")
 }
 
